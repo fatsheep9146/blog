@@ -6,26 +6,26 @@ draft: true
 
 TBD 对 opentelmetry collector 的功能，定位的基本介绍
 
-首先，通过对官方文档中有关[配置文件](https://opentelemetry.io/docs/collector/configuration/)的介绍，可以了解到，collector 内部包含几类重要的组件，
+首先，通过对官方文档中有关[配置文件](https://opentelemetry.io/docs/collector/configuration/)的介绍，可以了解到，collector 内部包含几类重要的组件(component)，
 
 - exporter
 - processor
 - receiver
 - extension
 
-每一类组件都有自己的定位，然后最终再通过 pipeline 最终将上述组件串联成一个数据流。
+每一类组件都有自己的定位，最终再通过 pipeline 将上述组件串联成一个数据的流。
 
 举个例子，下面的配置文件定义了
 
-- 一个 类型为 otlp，名称为 r 的 receiver 对象
-- 一个 类型为 batch，名称为空 的 processor
-- 一个 类型为 otlp，名称为空的 exporter
+- 一个 receiver 对象，类型为 otlp，名称为 r1 
+- 一个 processor 对象，类型为 batch，名称为空
+- 一个 exporter 对象，类型为 otlp，名称为 e1
 
-并且最终由一个类型为 traces 的 pipeline 将上述 3 者串联了起来
+并且最终由一个数据类型为 traces 的 pipeline 对象将上述 3 者串联了起来
 
 ```yaml
 receivers:
-  otlp/r:
+  otlp/r1:
     protocols:
       grpc:
 
@@ -33,16 +33,22 @@ processors:
   batch:
 
 exporters:
-  otlp:
+  otlp/e1:
     endpoint: otelcol:4317
 
 service:
   pipelines:
     traces:
-      receivers: [otlp/r]
+      receivers: [otlp/r1]
       processors: [batch]
-      exporters: [otlp]
+      exporters: [otlp/e1]
 ```
+
+当然这个只是 collector 最基本的一种使用样例，在这基础之上，还有更多更灵活的用法
+- 组件复用：比如同一个组件，可以被多个 pipeline 所共享，比如定义了 2 种 receiver ，都希望最终导入到一个 exporter 中
+- 组件扩展：用户可以根据自己的需求，开发自己想要的组件，满足自己的需求。TBD 简单举几个例子
+
+所以下面我想要为大家解析 collector 的代码设计，其设计的核心思想，我认为就是为了在实现基本功能的基础之上，还能更优雅的实现上面提到的灵活使用。
 
 ##  如何实现各种不同的组件？
 
