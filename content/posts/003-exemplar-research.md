@@ -24,19 +24,51 @@ metric 适合用来描述一个应用的整体表现；trace 则适合用于探�
 
 - 监控埋点改造，加入 exemplar 信息
 - 暴露 openmetrics 协议监控数据 
+- to collect the metrics & exemplars using Prometheus
+- to configure Grafana to visualize the time series with the exemplars 
 
 ## 监控埋点改造，加入 exemplar 信息
 
-TBD 阐述一下原来的方式
+1.4.0 以上版本的 prometheus golang library 专门为 exemplar feature 增加新的埋点函数，使用样例如下
 
-需要使用 1.4.0 以上版本的 prometheus golang library 进行埋点，并且调用专门为 exemplar feature 增加的埋点函数
+```go
+	requestDurationsHistogram = prometheus.NewHistogram(prometheus.HistogramOpts{
+		Name:    "http_request_durations_histogram_seconds",
+		Help:    "HTTP request latency distributions.",
+		Buckets: []float64{.005, .01, .025, .05, .1, .25, .5, 1, 2.5, 5, 10, 25, 50, 100},
+	})
 
-
-
-TBD 
-- ObserveWithExemplar
-- ...
+    requestDurationsHistogram.(prometheus.ExemplarObserver).ObserveWithExemplar(float64(time.Since(starttime)), prometheus.Labels{
+        "TraceID": traceId.String(),
+    })
 
 ```
-curl -H "Accept: application/openmetrics-text" 127.0.0.1:7777/metrics
+
+## 暴露 openmetrics 协议监控数据 
+
+除了采用 exemplar 专用的埋点函数以外，还需要通过 prometheus client vendor 开启 openmetrics 协议的数据
+
+```go
+	prometheus.Register(requestDurationsHistogram)
+	mux.Handle("/metrics", promhttp.HandlerFor(
+		prometheus.DefaultGatherer,
+		promhttp.HandlerOpts{
+			EnableOpenMetrics: true,
+		},
+	))
 ```
+
+通过下面的命令可以看到带有 exemplar 信息的数据
+```
+$ curl -H "Accept: application/openmetrics-text" 127.0.0.1:7777/metrics
+http_request_durations_histogram_seconds_bucket{le="0.005"} 0
+....
+http_request_durations_histogram_seconds_bucket{le="50.0"} 0
+http_request_durations_histogram_seconds_bucket{le="100.0"} 0
+http_request_durations_histogram_seconds_bucket{le="+Inf"} 1 # {TraceID="4730c8f4b45465a501b2b42e0589b891"} 6.1782157e+07 1.664375433305092e+09
+http_request_durations_histogram_seconds_sum 6.1782157e+07
+```
+
+# 参考
+1. https://vbehar.medium.com/using-prometheus-exemplars-to-jump-from-metrics-to-traces-in-grafana-249e721d4192
+2. 
