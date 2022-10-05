@@ -1,12 +1,10 @@
 ---
-title: "003 Exemplar Research"
+title: "exemplar feature 体验"
 date: 2022-09-13T18:59:25+08:00
-draft: true
+draft: false 
 ---
 
-# Exemplar 调研
-
-# 什么是 exemplar，为什么要用 exemplar
+## 什么是 exemplar，为什么要用 exemplar
 
 在可观测领域，有三种经典数据类型
 
@@ -18,9 +16,9 @@ metric 适合用来描述一个应用的整体表现；trace 则适合用于探�
 
 所以为了解决这个问题，exemplar 技术诞生了。它相当于为 metric 和 trace 之间建立起了一座桥梁，使用户在遇到上面的问题时，可以直接一键跳转到导致异常波动的请求的 trace 详情中，大幅提升排障的速度和精度。
 
-# exemplar 基础概念
+## exemplar 基础概念
 
-# 如何使用 exemplar
+## 如何使用 exemplar
 
 目前一个 golang 程序，想要使用 exemplar 能力，需要做如下几件事情
 
@@ -35,17 +33,15 @@ metric 适合用来描述一个应用的整体表现；trace 则适合用于探�
 
 这个 server 最初始的状态只有一个 handler 被注册
 
-```go
-
-```
 
 我们将通过下面的步骤逐步为它实现 exemplar 的特性
 
-## 监控埋点改造，加入 exemplar 信息
+### 监控埋点改造，加入 exemplar 信息
 
 1.4.0 以上版本的 prometheus golang library 专门为 exemplar feature 增加新的埋点函数，使用样例如下
 
-```go
+```golang
+
 	requestDurationsHistogram = prometheus.NewHistogram(prometheus.HistogramOpts{
 		Name:    "http_request_durations_histogram_seconds",
 		Help:    "HTTP request latency distributions.",
@@ -58,11 +54,11 @@ metric 适合用来描述一个应用的整体表现；trace 则适合用于探�
 
 ```
 
-## 暴露 openmetrics 协议监控数据 
+### 暴露 openmetrics 协议监控数据 
 
 除了采用 exemplar 专用的埋点函数以外，还需要通过 prometheus client vendor 开启 openmetrics 协议的数据
 
-```go
+```golang
 	prometheus.Register(requestDurationsHistogram)
 	mux.Handle("/metrics", promhttp.HandlerFor(
 		prometheus.DefaultGatherer,
@@ -73,7 +69,8 @@ metric 适合用来描述一个应用的整体表现；trace 则适合用于探�
 ```
 
 通过下面的命令可以看到带有 exemplar 信息的数据
-```
+
+```shell
 $ curl -H "Accept: application/openmetrics-text" 127.0.0.1:7777/metrics
 http_request_durations_histogram_seconds_bucket{le="0.005"} 0
 ....
@@ -83,14 +80,20 @@ http_request_durations_histogram_seconds_bucket{le="+Inf"} 1 # {TraceID="4730c8f
 http_request_durations_histogram_seconds_sum 6.1782157e+07
 ```
 
-## 配置 prometheus 服务去采集 metric 数据
+### 配置 prometheus 服务去采集 metric 数据
 
-## 配置 tempo 服务去收集存储 trace 数据
+TBD
 
-## 配置 grafana 服务以 prometheus，tempo 为数据源，并且将二者进行关联
+### 配置 tempo 服务去收集存储 trace 数据
 
-## 绘制开启了 exemplar 特性的 dashboard
+TBD
 
-# 参考
+### 配置 grafana 服务以 prometheus，tempo 为数据源，并且将二者进行关联
+
+TBD
+
+### 绘制开启了 exemplar 特性的 dashboard
+
+## 参考
 1. https://vbehar.medium.com/using-prometheus-exemplars-to-jump-from-metrics-to-traces-in-grafana-249e721d4192
 2. 
