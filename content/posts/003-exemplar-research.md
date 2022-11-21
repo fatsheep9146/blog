@@ -76,17 +76,17 @@ http://127.0.0.1:3000/d/fOpOPcO4k/demo-server?orgId=1&from=now-5m&to=now
 
 去查看一个已经绘制好的 http server 的 dashboard，
 
-<!-- ![dashboard](./demo-server-dashboard.jpg) -->
+![demo server dashboard](/img/demo-server-dashboard.jpg)
 
 在 dashboard 中，我们可以看到展示的是 http server 响应请求延时的 P99 值，并且在图中除了包括表示趋势变化的指标线以外，在线的周围还包括了一些散点，这些点其实表示的就是在这个时间线上出现过的 exemplar 信号。
 
 将光标移动到一个 P99 值显著比其他点的要高的 exemplar 光标上时，grafana 就会弹出一个提示窗口，其中既包含了这个 exemplar 信号的详细信息，比如这个信号对应的 trace id，具体的延时等，还包括了一个可以基于这个 trace id 进行跳转的按钮。
 
-<!-- ![dashboard](./exemplar-basic-info.jpg) -->
+![exemplar basic info](/img/exemplar-basic-info.jpg)
 
 从这个按钮点击进去之后，我们就可以看到这个 trace 的详细视图了。我们就可以基于这个视图从 trace 的视角去分析异常的原因。
 
-<!-- ![dashboard](./tempo-dashboard.jpg) -->
+![tempo dashboard](/img/tempo-dashboard.jpg)
 
 ## 参考文档
 
