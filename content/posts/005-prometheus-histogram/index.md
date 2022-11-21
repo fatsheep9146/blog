@@ -18,17 +18,10 @@ A histogram with a base metric name of <basename> exposes multiple time series d
 
 # histogram 的使用
 
-TBD 对 golang client 代码理解一下，看如何生产 histogram 类型的原始数据
-
-client_golang/prometheus/examples_test.go
-
-我们从一个 http server 的例子开始
+我们从一个 http server 的例子开始，代码实现放在如下仓库中
 
 ## 统计平均延时
 
-- 计算平均值[1]
-
-## 计算平均值
 
 To calculate the average request duration during the last 5 minutes from a histogram or summary called http_request_duration_seconds, use the following expression[1]:
 ```
