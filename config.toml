@@ -1,4 +1,4 @@
-baseURL = 'http://example.org/'
+baseURL = 'https://fatsheep9146.netlify.app/'
 languageCode = 'en-us'
-title = '一只肥羊的思考'
-theme = "beautifulhugo"
+title = 'fatsheep9146'
+theme = "PaperMod"
