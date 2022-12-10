@@ -2,6 +2,7 @@
 title: "prometheus exemplar feature 体验"
 date: 2022-09-13T18:59:25+08:00
 draft: false 
+tags: ["prometheus", "o11y", "observability"]
 ---
 
 ## 什么是 exemplar

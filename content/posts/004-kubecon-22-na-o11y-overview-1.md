@@ -2,6 +2,7 @@
 title: "kubeCon 2022 北美可观测相关 talks 观后感（1）"
 date: 2022-12-9T18:59:25+08:00
 draft: false 
+tags: ["kubecon", "o11y", "observability"]
 ---
 
 2022 KubeCon 北美站于十月在底特律召开。可观测性(observability)作为一个热门主题，有多达 7 个 talk。
