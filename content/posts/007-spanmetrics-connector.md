@@ -10,11 +10,37 @@ tags: ["opentelemetry", "trace", "observability", "o11y", "opentelemetry-collect
 本文将介绍 opentelemetry collector 插件集合中的 spanmetrics connector 插件，主要描述它的基本功能和基本使用方式，并且进一步结合 demo 示例展示它的基本使用方法和其他的一些高阶使用方法。
 
 将主要从以下几个问题出发
+- 什么是 opentelemetry collector？
 - 什么是 connector 类型插件？
 - 什么是 spanmetrics connector 插件？
 - 如何使用 spanmetrics connector 插件？
 
-## 1. 什么是 connector 类型的插件？
+## 1. 什么是 opentelemetry collector？
+
+Opentelemetry 是开源社区针对可观测领域相关技术制定的一套新的技术标准。它出现的目的是为了解决，用户在对自身业务进行可观测能力建设时，最常遇到的两个问题
+
+- 多种多样的可观测数据类型：包括 metric，trace，log，profiling，exception，每种数据类型都有各自的特点，且难以联动
+- 多种多样的可观测服务提供商：市面上存在多种可观测服务提供商（比如 datadog）或者开源解决方案（比如 prometheus），但是方案之间数据协议不一致，接入方式不一致，导致用户被服务商强绑定，迁移方案成本很高，并且服务商之间缺乏数据联动。
+
+![没有opentelemetry的解决方案](/img/007-spanmetrics-connector/09-observability-without-otel.png)
+
+如上图所示，业务程序需要根据自己选择的可观测方案（比如 prometheus，jaeger），用对应的 SDK（prometheus metric sdk，jaeger trace sdk）进行数据埋点，并且需要部署方案对应的采集服务（jaeger agent），最终将数据持久化到对应的存储中（prometheus server, jaeger server）。想要切换解决方案（比如从 jaeger 切换为 zipkin），就需要切换完整的一套。
+
+所以 Opentelemetry 提供了几个方面的能力来解决这些问题：
+
+- 针对常见的可观测数据类型（metric，trace，log，profiling）提供了统一 API 定义：规范了各种数据的格式标准，联动方式
+- 针对不同编程语言的提供了数据埋点的 SDK：golang，java，c++，python 等大部分常见语言都以覆盖，用户通过引入 SDK 即可生产标准的可观测数据
+- 针对数据采集，处理，导出的需求，提供了一个强大工具 opentelemetry-collector：用户可以通过配置为 collector 内部编排多个从数据的处理流，每个流都包含数据的输入，处理，输出3个阶段。用户可以在其中根据自己的需求对数据进行非常灵活的二次加工，并且最终输出到希望输出的任何存储中。
+
+最终在 Opentelemetry 的加持下，业务的可观测体系变成下面的样子
+
+![有opentelemetry的解决方案](/img/007-spanmetrics-connector/10-observability-with-otel.png)
+
+在这种状态下，用户一方面在也不用担心被某个解决方案所绑定，可以随意切换最终的可观测服务商，只要他兼容了 opentelemetry 协议。另一方面用户还可以使用 opentelemetry-collector 强大的数据加工能力，对数据进行灵活的二次处理。
+
+
+
+## 2. 什么是 connector 类型的插件？
 
 我们都知道 opentelemetry collector 是一种插件式架构，可以配置多种插件来收集(receiver)、处理(processor)和导出(exporter)可观测数据，形成一个个可观测数据的处理流(pipeline)。
 
@@ -65,7 +91,7 @@ service:
 
 而 spanmetrics connector 就是我们这次要重点介绍的一种 connector。他是属于典型的数据类型转换的场景。
 
-## 2. 什么是 spanmetrics connector 插件？
+## 3. 什么是 spanmetrics connector 插件？
 
 Spanmetrics connector 用来解决的问题是 —— 从接受到的 trace 数据中计算出有价值的统计类 R.E.D 指标 —— 请求总数(Request)，请求错误数(Error) 和请求响应延时(Duration)。
 
@@ -84,9 +110,9 @@ Spanmetrics connector 用来解决的问题是 —— 从接受到的 trace 数�
 
 比如 `sum by (service_name)(calls_total{status_code == "error"})` 就是在按照服务的粒度统计每个服务的失败请求总数。
 
-## 3. 怎么使用 spanmetrics connector 插件？
+## 4. 怎么使用 spanmetrics connector 插件？
 
-### 3.1 最基本使用
+### 4.1 最基本使用
 
 在当前最新版本下(0.76.1)，只需要 2 个步骤
 
@@ -120,7 +146,7 @@ docker compose up --no-build
 
 除了基本的默认使用方式，spanmetrics 也提供了几种更高阶的使用模式
 
-### 3.2 高阶使用 —— 自定义统计维度
+### 4.2 高阶使用 —— 自定义统计维度
 
 除了默认的 4 个 label，用户可以根据自己的需求指定其他的 label 作为新的聚合维度。比如说如果我们是在使用一个 http 协议的服务。那么我们可以通过将配置文件修改为如下形式
 
@@ -135,11 +161,52 @@ connectors:
 
 从而为最终的指标增加 http.method, http.status_code 的这两个统计维度，可以更好的针对不同的 http.method, http.status code 进行统计。
 
-### 3.3 高阶使用 —— exemplar 能力
+### 4.3 高阶使用 —— exemplar 能力
 
 Exemplar 是一种能够将 metric 和 trace 建立起内在联系的手段。可以让运维人员在通过 metrics 发现线上的潜在问题时，可以通过 exemplar 信息快速定位到引起 metric 指标异常的具体 trace，实现一键根因定位。
 
-当前如果想要使用 exemplar 能力，研发需要修改业务代码中有关 metric 埋点部分需要调用的函数，但是这种方式给业务研发带来一定的接入成本，有侵入性。但是通过 spanmetrics connector 生成的指标，connector 会直接附加上 exemplar 信息，极大降低了研发对 exemplar 的使用成本，无侵入性。
+想象一个非常常见的日常问题排查的场景：当运维人员发现，某个服务的 p99 延时突然升高时，典型的处理方法就是去查询延时升高的时间段，该服务的日志，是否有记录处理某些请求耗时比较长的日志记录；或者通过 trace 数据，搜索耗时大于某个阈值的所有 trace 信息。无论是哪一种方式，都面临不小的检索工作。而且很有可能这些信息并没有被记录下来，导致问题变成了一个未解之谜。
+
+但是有了 exemplar 能力，我们可以极大的提升这个检索的速度，我们可以快速的定位到引起 metric 指标变成现在这个状态的具体的 trace id，从而可以迅速定位引起问题的具体请求，进而进一步分析根因。
+
+Exemplar 核心设计思想就是，在 metric 上额外附上一种叫做 exemplar 的额外信息，而这个信息比较常见的就是 trace id，下面的这个样例就是 OpenTelemetry 官方定义的 exemplar 格式，我们可以看到，针对 histogram 类型，每个 bucket 上，我们都可以选择附上一个 trace_id 的信息，这个 trace_id 对应的 trace 也是正好位于这个 bucket 的范围内。
+
+```
+# TYPE foo histogram
+foo_bucket{le="0.01"} 0
+foo_bucket{le="0.1"} 8 # {} 0.054
+foo_bucket{le="1"} 11 # {trace_id="KOO5S4vxi0o"} 0.67
+foo_bucket{le="10"} 17 # {trace_id="oHg5SJYRHA0"} 9.8 1520879607.789
+foo_bucket{le="+Inf"} 17
+foo_count 17
+foo_sum 324789.3
+foo_created  1520430000.123
+```
+
+如果没有 opentelemetry-collector 还想要使用 exemplar 能力，我们需要修改业务代码中有关 metric 埋点部分需要调用的函数，但是这种方式给业务研发带来一定的接入成本，有侵入性。比如下面就是通过 prometheus go client sdk 给 metric 加上 exemplar 信息的方式
+
+```go
+    handler := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+      starttime := time.Now()
+      count++
+      ...
+
+      ctx := req.Context()
+      traceId := trace.SpanContextFromContext(ctx).TraceID()
+
+      if _, err := w.Write([]byte("world")); err != nil {
+        http.Error(w, "write operation failed.", http.StatusInternalServerError)
+        return
+      }
+
+      log.Printf("request use %v seconds\n", float64(time.Since(starttime))/float64(time.Second))
+      requestDurationsHistogram.(prometheus.ExemplarObserver).ObserveWithExemplar(float64(time.Since(starttime))/float64(time.Second), prometheus.Labels{
+        "traceID": traceId.String(),
+      })
+	  })
+```
+
+但是通过 spanmetrics connector 生成的指标，connector 会直接附加上 exemplar 信息，极大降低了研发对 exemplar 的使用成本，无侵入性。
 
 我们可以在官方 demo 中体验这个非常便捷的功能。查看页面 http://127.0.0.1:8080/grafana/d/W2gX2zHVk/demo-dashboard?orgId=1&viewPanel=2&var-service=frontend
 
@@ -154,6 +221,8 @@ Exemplar 是一种能够将 metric 和 trace 建立起内在联系的手段。�
 点击这个按钮，我们就可以以这个 exemplar 对应的 trace id 查找到具体的 trace 的链路信息，跳转到访问 Jaeger 的页面。
 
 ![跳转 trace 详情](/img/007-spanmetrics-connector/06-jaeger-trace-detail.jpg)
+
+
 
 ### 3.4 高阶使用 —— explicit / exponential histogram 
 
